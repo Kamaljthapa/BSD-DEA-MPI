@@ -1,0 +1,135 @@
+---
+title: "ETM 537/506 Course Project"
+author: "Kamal Thapa"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load required packages for data processing just in case.
+
+```{r load_library, echo=FALSE, warning = FALSE}
+
+library(readxl)  #package for excel
+library(readr)   #package for csv
+library(dplyr)   #package for data manipulation
+library(stringr) #package for string manipulation
+
+```
+
+
+
+```{r }
+
+# Load the dataframe from the .RDS file
+exp_data           <- readRDS("Processed Data/TotExpFinal.rds")
+ela_data_temp      <- readRDS("Processed Data/ELAFinal.rds")
+math_data_temp     <- readRDS("Processed Data/MathFinal.rds")
+dis_data_temp      <- readRDS("Processed Data/TotDisFinal.rds")
+freemeal_data_temp <- readRDS("Processed Data/FreeMealFinal.rds")
+
+
+ela_data      <- as.data.frame(ela_data_temp[,-1])
+math_data     <- as.data.frame(math_data_temp[,-1])
+dis_data      <- as.data.frame(dis_data_temp[,-1])
+freemeal_data <- as.data.frame(freemeal_data_temp[,-1])
+
+colnames(ela_data) <- "RawELAProf"
+colnames(math_data) <- "RawMathProf"
+
+```
+
+
+
+
+```{r final_data_combine, echo=FALSE}
+
+rds_combined <- cbind(exp_data, dis_data, freemeal_data,  ela_data, math_data)
+
+rds_combined
+
+# Save the data frame as a CSV file
+write.csv(rds_combined, "Processed Data/manipulate.csv", row.names = FALSE)
+
+```
+
+Since ELAProf and MathProf contains NAs, we want to replace NAs with the data-trend from prior year. We will first calculate the percentage of ELAProf and MathProf from previous year and multiply the percentage with the study year total student to get the total students.
+
+
+In R, the lag function is used to obtain the lagged (previous) values of a vector or column in a data frame. The lag function is part of the dplyr package and is commonly used for time-series analysis and other scenarios where you need to access the previous values of a variable.
+
+Here's a brief explanation:
+
+lag(vector, n = 1): Returns the values of vector lagged by n positions. By default, n is set to 1, so it returns the immediate previous value.
+
+```{r data_replace_NA, echo=FALSE}
+
+library(dplyr)
+
+data2021_NA <- rds_combined
+
+# Convert ELAProf to numeric
+data2021_NA$RawELAProf <- as.numeric(data2021_NA$RawELAProf)
+
+# Convert MathProf to numeric
+data2021_NA$RawMathProf <- as.numeric(data2021_NA$RawMathProf)
+
+# Convert TotStu to numeric
+data2021_NA$TotStu <- as.numeric(data2021_NA$TotStu)
+
+# Calculate the past percentage & Multiply with recent TotStu
+data2021_NA2 <- data2021_NA |>
+  mutate(AstELAProf = ifelse(is.na(RawELAProf), paste0(round((lag(RawELAProf, n = 34)) * 0.1), "*"), as.character(RawELAProf))) |>
+  mutate(AstMathProf = ifelse(is.na(RawMathProf), paste0(round((lag(RawMathProf, n = 34)) * 0.11), "*"), as.character(RawMathProf)))
+
+data2021_NA2
+
+```
+
+
+```{r MealElig_data_process, echo=FALSE}
+
+
+free_meal_temp1 <- as.data.frame((as.numeric(data2021_NA2[,3])*as.numeric(data2021_NA2[,5])))
+
+free_meal_temp2 <- round(free_meal_temp1)
+
+colnames(free_meal_temp2) <- "MealElig"
+
+free_meal_temp2
+
+```
+
+
+```{r MPI_data, echo=FALSE}
+
+MPI_BDS_data_temp  <- as.data.frame(cbind(data2021_NA2$School, data2021_NA2$TotStu, data2021_NA2$TotExp, data2021_NA2$DisStu,
+                       free_meal_temp2, data2021_NA2$AstELAProf, data2021_NA2$AstMathProf))
+
+colnames(MPI_BDS_data_temp) <- c("School", "Tot_Stu","Tot_Exp", "Dis_Stu", "Meal_Elig", "Ast_ELA_Prof", "Ast_Math_Prof")
+
+# Remove '*' from Ast_ELA_Prof and Ast_Math_Prof columns to form new columns
+MPI_BDS_data <- MPI_BDS_data_temp |>
+  mutate(ELA_Prof  = gsub("\\*", "", Ast_ELA_Prof),
+         Math_Prof = gsub("\\*", "", Ast_Math_Prof))
+
+MPI_BDS_data[, 8] <- as.numeric(MPI_BDS_data[, 8])
+MPI_BDS_data[, 9] <- as.numeric(MPI_BDS_data[, 9])
+
+MPI_BDS_data
+
+```
+
+
+
+```{r save_data, echo=FALSE}
+
+# Save the data frame as a CSV file
+write.csv(MPI_BDS_data, "Processed Data/MPI_BDS_data.csv", row.names = FALSE)
+
+```
+
+

@@ -1,0 +1,429 @@
+---
+title: "Data Process for Disability Students"
+author: "Kamal Thapa"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Note: Data Available for 2018-19, 2020-21, and 2021-22., no data for 2017-18 & 2019-20. 
+
+#2021-2022
+
+Load required packages for data processing.
+
+```{r load_library, echo=FALSE, warning = FALSE}
+
+library(readxl)  #package for excel
+library(readr)   #package for csv
+library(dplyr)   #package for data manipulation
+library(stringr) #package for string manipulation
+
+```
+
+
+```{r disable_stu_link_2122, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url1 <- "https://www.ode.state.or.us/data/reportcard/media/23/distdata/AAGAggregate2243.csv"
+
+# Download the file to a temporary location as it didnt allow direct access to the link
+temp_file1 <- tempfile()
+download.file(url1, temp_file1, mode = "wb")
+
+# Read the csv file from the temporary location
+dis_data1 <- read.csv(temp_file1)  
+
+# Remove the temporary file
+file.remove(temp_file1)
+
+```
+
+
+```{r bsd_disable_stu_2122, echo=FALSE}
+
+library(dplyr)
+
+select_data1 <- as.data.frame(dis_data1) |>
+  select("District.Name", "School.Name", "School.Type", "Student.Enrollment",
+         "Students.with.Disabilities")  |>  #selects the columns
+  arrange(`School.Name`) #arranges in alphabetical order based on School name
+
+select_data1
+
+select_data1 <- select_data1 |>
+  rename("District"=`District.Name`, "School"= `School.Name`, "TotStu"=`Student.Enrollment`, 
+         "SchType"=`School.Type`,"StdwDis"=`Students.with.Disabilities`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion" ) #same keyword
+
+
+filtered_data1_temp <- select_data1 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &           
+           grepl("E", `SchType`, ignore.case = TRUE) &  #Selects rows with E in SchType Column
+           !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data1 <- filtered_data1_temp |>
+  mutate(DisStuPer=as.numeric(sub("%", "", StdwDis))/100) |>  #replaces % sign with empty space in StdwDis Column
+  select(-StdwDis) #deletes StdwDis Column 
+
+filtered_data1 <- filtered_data1  |>
+  mutate(DisStu = ceiling(TotStu*DisStuPer))  #create a new column DisStu, rounds to nearest integer  
+      
+filtered_data1
+```
+
+
+```{r dis_differentiate_Raleighs_2122}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data1$School[filtered_data1$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data1$School[filtered_data1$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data1
+
+
+```
+
+```{r school_names_2122, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data1[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2122 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2122")
+
+# rename as dataframe
+schoolname2122 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2122) <- c("School")
+
+```
+
+```{r colbind_2122, echo=FALSE}
+
+dis_data2122 <- cbind(schoolname2122, filtered_data1[4],filtered_data1[6])
+dis_data2122
+
+```
+
+#2020-2021
+
+
+```{r disable_stu_link_2021, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url2 <- "https://www.ode.state.or.us/data/reportcard/media/22/distdata/RCAggregate2243.csv"
+
+# Download the file to a temporary location as it didnt allow direct access to the link
+temp_file2 <- tempfile()
+download.file(url2, temp_file2, mode = "wb")
+
+# Read the csv file from the temporary location
+dis_data2 <- read.csv(temp_file2)  
+
+# Remove the temporary file
+file.remove(temp_file2)
+
+
+```
+
+
+```{r bsd_disable_stu_2021, echo=FALSE}
+
+library(dplyr)
+
+select_data2 <- as.data.frame(dis_data2) |>
+  select("District.Name", "School.Name", "School.Type", "Student.Enrollment",
+         "Students.with.Disabilities")   |> #selects the columns
+  arrange(`School.Name`) #arranges in alphabetical order based on School name
+
+select_data2 <- select_data2 |>
+  rename("District"=`District.Name`, "School"= `School.Name`, "TotStu"=`Student.Enrollment`, 
+         "SchType"=`School.Type`,"StdwDis"=`Students.with.Disabilities`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion" ) #same keyword
+
+
+filtered_data2_temp <- select_data2 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &           
+           grepl("E", `SchType`, ignore.case = TRUE) &  #Selects rows with E in SchType Column
+           !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data2 <- filtered_data2_temp |>
+  mutate(DisStuPer=as.numeric(sub("%", "", StdwDis))/100) |>  #replaces % sign with empty space in StdwDis Column
+  select(-StdwDis) #deletes StdwDis Column 
+
+filtered_data2 <- filtered_data2  |>
+  mutate(DisStu = ceiling(TotStu*DisStuPer))  #create a new column DisStu, rounds to nearest integer 
+      
+filtered_data2
+```
+
+```{r dis_differentiate_Raleighs_2021}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data2$School[filtered_data2$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data2$School[filtered_data2$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data2
+
+
+```
+
+
+
+```{r school_names_2021, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data1[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2021 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2021")
+
+# rename as dataframe
+schoolname2021 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2021) <- c("School")
+
+```
+
+```{r colbind_2021, echo=FALSE}
+
+dis_data2021 <- cbind(schoolname2021, filtered_data2[4],filtered_data2[6])
+dis_data2021
+
+```
+
+
+#2018-2019
+
+
+```{r disable_stu_link_1819, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url3 <- "https://www.ode.state.or.us/data/reportcard/media/20/distdata/RCAggregate2243.csv"
+
+# Download the file to a temporary location as it didnt allow direct access to the link
+temp_file3 <- tempfile()
+download.file(url3, temp_file3, mode = "wb")
+
+# Read the csv file from the temporary location
+dis_data3 <- read.csv(temp_file3)  
+
+# Remove the temporary file
+file.remove(temp_file3)
+
+```
+
+
+```{r bsd_disable_stu_1819, echo=FALSE}
+
+library(dplyr)
+
+select_data3 <- as.data.frame(dis_data3) |>
+  select("District.Name", "School.Name", "School.Type", "Student.Enrollment",
+         "Students.with.Disabilities")  |> #selects the columns
+  arrange(`School.Name`) #arranges in alphabetical order based on School name
+
+select_data3 <- select_data3 |>
+  rename("District"=`District.Name`, "School"= `School.Name`, "TotStu"=`Student.Enrollment`, 
+         "SchType"=`School.Type`,"StdwDis"=`Students.with.Disabilities`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion" ) #same keyword
+
+
+filtered_data3_temp <- select_data3 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &           
+           grepl("E", `SchType`, ignore.case = TRUE) &  #Selects rows with E in SchType Column
+           !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data3 <- filtered_data3_temp |>
+  mutate(DisStuPer=as.numeric(sub("%", "", StdwDis))/100) |>  #replaces % sign with empty space in StdwDis Column
+  select(-StdwDis) #deletes StdwDis Column 
+
+filtered_data3 <- filtered_data3  |>
+  mutate(DisStu = ceiling(TotStu*DisStuPer))  #create a new column DisStu, rounds to nearest integer 
+      
+filtered_data3
+```
+
+```{r dis_differentiate_Raleighs_1819}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data3$School[filtered_data3$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data3$School[filtered_data3$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data3
+
+
+```
+
+
+
+```{r school_names_1819, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data3[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 1819 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1819")
+
+# renames as dataframe
+schoolname1819 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1819) <- c("School")
+
+```
+
+
+```{r colbind_1819, echo=FALSE}
+
+dis_data1819 <- cbind(schoolname1819, filtered_data3[4],filtered_data3[6])
+dis_data1819
+
+```
+
+#2017-2018
+
+
+```{r disable_stu_link_1718, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url4 <- "https://www.ode.state.or.us/data/reportcard/media/19/distdata/RCAggregate2243.csv"
+
+# Download the file to a temporary location as it didnt allow direct access to the link
+temp_file4 <- tempfile()
+download.file(url4, temp_file4, mode = "wb")
+
+# Read the csv file from the temporary location
+dis_data4 <- read.csv(temp_file4)  
+
+# Remove the temporary file
+file.remove(temp_file4)
+
+```
+
+
+```{r bsd_disable_stu_1718, echo=FALSE}
+
+library(dplyr)
+
+select_data4 <- as.data.frame(dis_data4) |>
+  select("District.Name", "School.Name", "School.Type", "Student.Enrollment",
+         "Students.with.Disabilities")  |> #selects the columns
+  arrange(`School.Name`) #arranges in alphabetical order based on School name
+
+select_data4 <- select_data4 |>
+  rename("District"=`District.Name`, "School"= `School.Name`, "TotStu"=`Student.Enrollment`, 
+         "SchType"=`School.Type`,"StdwDis"=`Students.with.Disabilities`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion" ) #same keyword
+
+
+filtered_data4_temp <- select_data4 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &           
+           grepl("E", `SchType`, ignore.case = TRUE) &  #Selects rows with E in SchType Column
+           !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data4 <- filtered_data4_temp |>
+  mutate(DisStuPer=as.numeric(sub("%", "", StdwDis))/100) |>  #replaces % sign with empty space in StdwDis Column
+  select(-StdwDis) #deletes StdwDis Column 
+
+filtered_data4 <- filtered_data4  |>
+  mutate(DisStu = ceiling(TotStu*DisStuPer))  #create a new column DisStu, rounds to nearest integer
+      
+filtered_data4
+
+```
+
+```{r dis_differentiate_Raleighs_1718}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data4$School[filtered_data4$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data4$School[filtered_data4$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data4
+
+
+```
+
+
+```{r school_names_1718, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data4[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 1718 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1718")
+
+# renames as dataframe
+schoolname1718 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1718) <- c("School")
+
+```
+
+
+```{r colbind_1718, echo=FALSE}
+
+dis_data1718 <- cbind(schoolname1718, filtered_data4[4],filtered_data4[6])
+dis_data1718
+
+```
+
+```{r colbind_disability, echo=FALSE}
+
+dis_data_final <- rbind(dis_data1819, dis_data2021, dis_data2122) 
+
+
+# Save the dataframe to an R data file 
+saveRDS(dis_data_final, file = "Processed Data/TotDisFinal.rds")
+
+# Save the data frame as a CSV file
+write.csv(dis_data_final, "Processed Data/TotDisFinal.csv", row.names = FALSE)
+
+```
+
+
+

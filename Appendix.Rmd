@@ -1,0 +1,666 @@
+---
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_sections: true 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Results Using Envelopment Model
+
+```{r load_package, echo = FALSE, message = FALSE}
+
+library(readr)
+library(dplyr)
+library(stringr)
+library(kableExtra)
+library(TRA)
+
+schooldata <- read_csv("D:/PSU/DEA/BSD DEA Project/ETM 506/MPI Project/Processed Data/MPI_BDS_data.csv", show_col_types=F)|>
+  mutate(School = substr(School, 1, nchar(School)-4))
+
+```
+
+
+
+### Efficiency Result for Academic Year 2018-19 
+
+```{r, echo=FALSE}
+
+sdata1819 <- as.data.frame(schooldata[,c(1,3,4,5,8,9)]) 
+
+data1819 <- sdata1819[1:34,]
+
+ND <- nrow(data1819)
+
+DMUNames <- sdata1819[1:34,1] #use this format for DMU Names
+
+# Extract Input variable
+xdata <- as.matrix(data1819 [,2])
+
+# Extract Output variables 
+ydata <- as.matrix(data1819 [,3:6])
+
+# Extract number of Input, Output and DMUs 
+ND <- nrow(xdata) # Number of DMUs
+NX <- ncol(xdata) # Number of Inputs (1 in this case)
+NY <- ncol(ydata) # Number of Outputs (4 in this case)
+
+# Assign row names for Input
+rownames(xdata) <- DMUNames
+
+# Assign row names for Outputs
+rownames(ydata) <- DMUNames
+ 
+Xnames <- colnames(xdata)
+Ynames <- colnames(ydata)
+                             
+# Assign names for DMUs
+DMUnames <-list(DMUNames)
+Lambdanames <- paste0("$\\lambda_{S", 1:ND, "}$")
+
+```
+
+
+```{r, echo=FALSE,message = FALSE}
+library(dplyr, quietly = TRUE) # For data organizing
+library(ROI, quietly = TRUE) # R Optimization Interface
+library(ROI.plugin.glpk, quietly = TRUE) # Connection to glpk as solver
+library(ompr, quietly = TRUE) # Optimization Modeling using R
+library(ompr.roi, quietly = TRUE) # Connective tissue
+```
+
+
+
+
+```{r, echo=FALSE}
+
+# Need to remember to restructure the results matrices.
+
+res.efficiency <- matrix(rep(-1.0, ND), nrow = ND, ncol = 1)
+res.lambda     <- matrix(rep(-1.0, ND^2), nrow = ND,ncol = ND)
+res.vweight    <- matrix(rep(-1.0, ND*NX), nrow=ND,ncol=NX) 
+res.uweight    <- matrix(rep(-1.0, ND*NY), nrow=ND,ncol=NY) 
+
+dimnames(res.efficiency) <- c(DMUnames,"VRS-IO")
+dimnames(res.lambda)     <- c(DMUnames,DMUnames)
+
+RTS<-"VRS"
+for (k in 1:ND) {
+  
+  school_VRS <- MIPModel() |>
+    add_variable(vlambda[j], j = 1:ND, type = "continuous",
+                 lb = 0) |>
+    add_variable(vtheta, type = "continuous") |>
+    set_objective(vtheta, "min") |>
+    add_constraint(sum_expr(vlambda[j] * xdata[j,i], j = 1:ND)
+                   <= vtheta * xdata[k,i], i = 1:NX,
+                   .show_progress_bar=FALSE ) |>
+    add_constraint(sum_expr(vlambda[j] * ydata[j,r], j = 1:ND)
+                   >= ydata[k,r], r = 1:NY,
+                   .show_progress_bar=FALSE )
+  if (RTS=="VRS") {school_VRS <- add_constraint(school_VRS,
+                  sum_expr(vlambda[j],j = 1:ND) == 1) }
+  
+  #Returns to Scale
+res1 <- solve_model(school_VRS, with_ROI(solver = "glpk"))
+  
+res.efficiency[k] <- get_solution(res1, vtheta)
+res.lambda[k,] <- t(as.matrix(as.numeric(get_solution(res1, vlambda[j])[,3] )))
+
+rduals  <- as.matrix(get_row_duals(res1))
+res.vweight[k,] <- -1*rduals[1:NX]
+res.uweight[k,] <- rduals[(NX+1):(NX+NY)]
+}
+
+```
+
+
+```{r, echo=FALSE}
+
+result_1819 <- res.efficiency
+
+colnames(result_1819) = c("$\\theta^{VRS}$")
+
+kbl (result_1819, booktabs=T, escape=F, longtable=T, digits=3, align='lc',
+     caption="School Efficiency for Academic Year 2018-19 Based on Envelopment Model (IO-VRS)")          |>
+  kable_styling(latex_options=c("HOLD_position","striped","repeat_header"))
+
+```
+
+
+### Efficiency Result for Academic Year 2020-21 
+
+```{r, echo=FALSE}
+
+sdata2021 <- as.data.frame(schooldata[,c(1,3,4,5,8,9)]) 
+
+data2021 <- sdata2021[35:68,]
+
+ND <- nrow(data2021)
+
+DMUNames <- sdata2021[35:68,1] #use this format for DMU Names
+
+# Extract Input variable
+xdata <- as.matrix(data2021 [,2])
+
+# Extract Output variables 
+ydata <- as.matrix(data2021 [,3:6])
+
+# Extract number of Input, Output and DMUs 
+ND <- nrow(xdata) # Number of DMUs
+NX <- ncol(xdata) # Number of Inputs (1 in this case)
+NY <- ncol(ydata) # Number of Outputs (4 in this case)
+
+# Assign row names for Input
+rownames(xdata) <- DMUNames
+
+# Assign row names for Outputs
+rownames(ydata) <- DMUNames
+ 
+Xnames <- colnames(xdata)
+Ynames <- colnames(ydata)
+                             
+# Assign names for DMUs
+DMUnames <-list(DMUNames)
+Lambdanames <- paste0("$\\lambda_{S", 1:ND, "}$")
+
+```
+
+
+```{r, echo=FALSE}
+
+# Need to remember to restructure the results matrices.
+
+res.efficiency <- matrix(rep(-1.0, ND), nrow = ND, ncol = 1)
+res.lambda     <- matrix(rep(-1.0, ND^2), nrow = ND,ncol = ND)
+res.vweight    <- matrix(rep(-1.0, ND*NX), nrow=ND,ncol=NX) 
+res.uweight    <- matrix(rep(-1.0, ND*NY), nrow=ND,ncol=NY) 
+
+dimnames(res.efficiency) <- c(DMUnames,"VRS-IO")
+dimnames(res.lambda)     <- c(DMUnames,DMUnames)
+
+RTS<-"VRS"
+for (k in 1:ND) {
+  
+  school_VRS <- MIPModel() |>
+    add_variable(vlambda[j], j = 1:ND, type = "continuous",
+                 lb = 0) |>
+    add_variable(vtheta, type = "continuous") |>
+    set_objective(vtheta, "min") |>
+    add_constraint(sum_expr(vlambda[j] * xdata[j,i], j = 1:ND)
+                   <= vtheta * xdata[k,i], i = 1:NX,
+                   .show_progress_bar=FALSE ) |>
+    add_constraint(sum_expr(vlambda[j] * ydata[j,r], j = 1:ND)
+                   >= ydata[k,r], r = 1:NY,
+                   .show_progress_bar=FALSE )
+  if (RTS=="VRS") {school_VRS <- add_constraint(school_VRS,
+                  sum_expr(vlambda[j],j = 1:ND) == 1) }
+  
+  #Returns to Scale
+res2 <- solve_model(school_VRS, with_ROI(solver = "glpk"))
+  
+res.efficiency[k] <- get_solution(res2, vtheta)
+res.lambda[k,] <- t(as.matrix(as.numeric(get_solution(res2, vlambda[j])[,3] )))
+
+rduals  <- as.matrix(get_row_duals(res2))
+res.vweight[k,] <- -1*rduals[1:NX]
+res.uweight[k,] <- rduals[(NX+1):(NX+NY)]
+}
+
+```
+
+
+```{r, echo=FALSE}
+
+result_2021 <- res.efficiency
+
+colnames(result_2021) = c("$\\theta^{VRS}$")
+#c("$\\theta^{VRS}$")
+
+kbl (result_2021, booktabs=T, escape=F, longtable=T, digits=3, align='lc',
+     caption="School Efficiency for Academic Year 2020-21 Based on Envelopment Model (IO-VRS)")          |>
+  kable_styling(latex_options=c("HOLD_position","striped","repeat_header"))
+
+```
+
+
+### Efficiency Result for Academic Year 2021-22 
+
+```{r, echo=FALSE}
+
+sdata2122 <- as.data.frame(schooldata[,c(1,3,4,5,8,9)]) 
+
+data2122 <- sdata2122[69:102,]
+
+ND <- nrow(data2122)
+
+DMUNames <- sdata2122[69:102,1] #use this format for DMU Names
+
+# Extract Input variable
+xdata <- as.matrix(data2122 [,2])
+
+# Extract Output variables 
+ydata <- as.matrix(data2122 [,3:6])
+
+# Extract number of Input, Output and DMUs 
+ND <- nrow(xdata) # Number of DMUs
+NX <- ncol(xdata) # Number of Inputs (1 in this case)
+NY <- ncol(ydata) # Number of Outputs (4 in this case)
+
+# Assign row names for Input
+rownames(xdata) <- DMUNames
+
+# Assign row names for Outputs
+rownames(ydata) <- DMUNames
+ 
+Xnames <- colnames(xdata)
+Ynames <- colnames(ydata)
+                             
+# Assign names for DMUs
+DMUnames <-list(DMUNames)
+Lambdanames <- paste0("$\\lambda_{S", 1:ND, "}$")
+
+```
+
+
+```{r, echo=FALSE}
+
+# Need to remember to restructure the results matrices.
+
+res.efficiency <- matrix(rep(-1.0, ND), nrow = ND, ncol = 1)
+res.lambda     <- matrix(rep(-1.0, ND^2), nrow = ND,ncol = ND)
+res.vweight    <- matrix(rep(-1.0, ND*NX), nrow=ND,ncol=NX) 
+res.uweight    <- matrix(rep(-1.0, ND*NY), nrow=ND,ncol=NY) 
+
+dimnames(res.efficiency) <- c(DMUnames,"VRS-IO")
+dimnames(res.lambda)     <- c(DMUnames,DMUnames)
+
+RTS<-"VRS"
+for (k in 1:ND) {
+  
+  school_VRS <- MIPModel() |>
+    add_variable(vlambda[j], j = 1:ND, type = "continuous",
+                 lb = 0) |>
+    add_variable(vtheta, type = "continuous") |>
+    set_objective(vtheta, "min") |>
+    add_constraint(sum_expr(vlambda[j] * xdata[j,i], j = 1:ND)
+                   <= vtheta * xdata[k,i], i = 1:NX,
+                   .show_progress_bar=FALSE ) |>
+    add_constraint(sum_expr(vlambda[j] * ydata[j,r], j = 1:ND)
+                   >= ydata[k,r], r = 1:NY,
+                   .show_progress_bar=FALSE )
+  if (RTS=="VRS") {school_VRS <- add_constraint(school_VRS,
+                  sum_expr(vlambda[j],j = 1:ND) == 1) }
+  
+  #Returns to Scale
+res3 <- solve_model(school_VRS, with_ROI(solver = "glpk"))
+  
+res.efficiency[k] <- get_solution(res3, vtheta)
+res.lambda[k,] <- t(as.matrix(as.numeric(get_solution(res3, vlambda[j])[,3] )))
+
+rduals  <- as.matrix(get_row_duals(res3))
+res.vweight[k,] <- -1*rduals[1:NX]
+res.uweight[k,] <- rduals[(NX+1):(NX+NY)]
+}
+
+```
+
+
+```{r, echo=FALSE}
+
+result_2122 <- res.efficiency
+
+colnames(result_2122) = c("$\\theta^{VRS}$")
+
+kbl (result_2122, booktabs=T, escape=F, longtable=T, digits=3, align='lc',
+     caption="School Efficiency for Academic Year 2021-22 Based on Envelopment Model (IO-VRS)")          |>
+  kable_styling(latex_options=c("HOLD_position","striped","repeat_header"))
+
+```
+
+
+## MPI Results using `Benchmarking` Package
+### Academic Year 2018-19 and 2020-21
+
+```{r bench_1821, echo = FALSE, message = FALSE}
+
+library(Benchmarking)
+
+DMUNames <- schooldata[1:34,1] 
+mpi_data <- schooldata[,c(1,3,4,5,8,9)]
+
+x0 <- as.matrix(mpi_data [1:34,2])
+y0 <- as.matrix(mpi_data [1:34,(3:6)])
+
+x1 <- as.matrix(mpi_data [35:68,2])
+y1 <- as.matrix(mpi_data [35:68,(3:6)])
+
+m1 <- malmq(x0,y0,,x1,y1,,RTS="vrs", ORIENTATION = "in")
+
+result1821 <- cbind(DMUNames,m1$e00,m1$e10,m1$e11,m1$e01,m1$ec,m1$tc,m1$m)
+#e00 = efficincies for period 0 with reference technology from period 0
+#e10 = efficincies for period 1 with reference technology from period 0
+#e11 = efficincies for period 1 with reference technology from period 1
+#e01 = efficincies for period 0 with reference technology from period 1
+
+
+colnames(result1821) <- c("School", "E1819-T1819", "E2021-T1819", 
+                      "E2021-T2021", "E1819-T2021", "PTEC", "TC", "MPI")
+
+kable(result1821, booktabs = T, align = "lccccccc", digits = 3, longtable=T,
+               caption = "Benchamrking Pacakge Results (IO-VRS): Academic Year 2018-19 and 2020-21") |>
+  kable_styling(latex_options = c("repeat_header","HOLD_position","striped")) |>
+  footnote(general = c("1819 = Academic Year 2018-19 and 2021 = Academic Year 2020-21",
+                       "E1819-T1819 = Efficiency for academic year 2018-19 with reference technology from academic year 2018-19",
+                       "E2021-T1819 = Efficiency for academic year 2020-21 with reference technology from academic year 2018-19",
+                       "E2021-T2021 = Efficiency for academic year 2020-21 with reference technology from academic year 2020-21",
+                       "E1819-T2021 = Efficiency for academic year 2018-19 with reference technology from academic year 2020-21"))
+
+```
+
+### Academic Year 2020-21 and 2021-22
+
+```{r bench_2022, echo = FALSE, message = FALSE}
+
+DMUNames <- schooldata[1:34,1] 
+mpi_data <- schooldata[,c(1,3,4,5,8,9)]
+
+x1 <- as.matrix(mpi_data [35:68,2])
+y1 <- as.matrix(mpi_data [35:68,(3:6)])
+
+x2 <- as.matrix(mpi_data [69:102,2])
+y2 <- as.matrix(mpi_data [69:102,(3:6)])
+
+m2 <- malmq(x1,y1,,x2,y2,,RTS="vrs", ORIENTATION = "in")
+
+result2022 <- cbind(DMUNames,m2$e00,m2$e10,m2$e11,m2$e01,m2$ec,m2$tc,m2$m)
+#e00 = efficincies for period 0 with reference technology from period 0
+#e10 = efficincies for period 1 with reference technology from period 0
+#e11 = efficincies for period 1 with reference technology from period 1
+#e01 = efficincies for period 0 with reference technology from period 1
+
+colnames(result2022) <- c("School", "E2021-T2021", "E2122-T2021", 
+                      "E2122-T2122", "E2021-T2122", "PTEC", "TC", "MPI")
+
+kable(result2022, booktabs = T, align = "lccccccc", digits = 3, longtable=T,
+               caption = "Benchamrking Pacakge Results (IO-VRS): Academic Year 2020-21 and 2021-22") |>
+  kable_styling(latex_options = c("repeat_header","HOLD_position","striped")) |>
+  footnote(general = c("2021 = Academic Year 2020-21 and 2122 = Academic Year 2021-22",
+                       "E2021-T2021 = Efficiency for academic year 2020-21 with reference technology from academic year 2020-21",
+                       "E2122-T2021 = Efficiency for academic year 2021-22 with reference technology from academic year 2020-21",
+                       "E2122-T2122 = Efficiency for academic year 2021-22 with reference technology from academic year 2021-22",
+                       "E2021-T2122 = Efficiency for academic year 2020-21 with reference technology from academic year 2021-22"))
+
+```
+
+
+## MPI Results using `DJL` Package
+### Academic Year 2018-19 and 2020-21
+
+```{r djl_1821, echo = FALSE, message = FALSE}
+
+library(DJL)
+
+DMUNames <- schooldata[1:34,1] 
+mpi_data <- schooldata[,c(1,3,4,5,8,9)]
+
+x0 <- as.matrix(mpi_data [1:34,2])
+y0 <- as.matrix(mpi_data [1:34,(3:6)])
+
+x1 <- as.matrix(mpi_data [35:68,2])
+y1 <- as.matrix(mpi_data [35:68,(3:6)])
+
+x2 <- as.matrix(mpi_data [69:102,2])
+y2 <- as.matrix(mpi_data [69:102,(3:6)])
+
+xdata <- array(c(x0,x1), dim = c(34, 1, 2)) #DJL needs to be array format
+ydata <- array(c(y0,y1), dim = c(34, 4, 2)) #DJL needs to be array format
+
+malm_djl1 <- roc.malmquist(xdata, ydata, tm=NULL, dm="dea", rts="vrs", orientation="i",
+              g=NULL, wd=NULL, ncv=NULL, env=NULL, cv="convex")
+
+djl_comb1 <- cbind(DMUNames, malm_djl1$cu, malm_djl1$fs, malm_djl1$mi)
+
+djl_res1 <- djl_comb1[,c(1,4,7,10)]
+colnames(djl_res1) <- c("School", "PTEC", "TC", "MPI")
+
+kable(djl_res1, booktabs = T, align = "lccc", digits = 3, longtable=T,
+               caption = "DJL Pacakge Results (IO-VRS): Academic Year 2018-19 and 2020-21") |>
+  kable_styling(latex_options = c("repeat_header","HOLD_position","striped")) 
+
+```
+
+
+### Academic Year 2020-21 and 2021-22
+
+```{r djl_2022, echo = FALSE, message = FALSE}
+
+library(DJL)
+
+DMUNames <- schooldata[1:34,1] 
+mpi_data <- schooldata[,c(1,3,4,5,8,9)]
+
+x0 <- as.matrix(mpi_data [1:34,2])
+y0 <- as.matrix(mpi_data [1:34,(3:6)])
+
+x1 <- as.matrix(mpi_data [35:68,2])
+y1 <- as.matrix(mpi_data [35:68,(3:6)])
+
+x2 <- as.matrix(mpi_data [69:102,2])
+y2 <- as.matrix(mpi_data [69:102,(3:6)])
+
+xdata <- array(c(x1,x2), dim = c(34, 1, 2)) #DJL needs to be array format
+ydata <- array(c(y1,y2), dim = c(34, 4, 2)) #DJL needs to be array format
+
+
+malm_djl2 <- roc.malmquist(xdata, ydata, tm=NULL, dm="dea", rts="vrs", orientation="i",
+              g=NULL, wd=NULL, ncv=NULL, env=NULL, cv="convex")
+
+djl_comb2 <- cbind(DMUNames, malm_djl2$cu, malm_djl2$fs, malm_djl2$mi)
+
+djl_res2 <- djl_comb2[,c(1,4,7,10)]
+colnames(djl_res2) <- c("School", "PTEC", "TC", "MPI")
+
+kable(djl_res2, booktabs = T, align = "lccc", digits = 3, longtable=T, escape=F,
+               caption = "DJL Pacakge Results (IO-VRS): Academic Year 2020-21 and 2021-22") |>
+  kable_styling(latex_options = c("repeat_header","HOLD_position","striped")) 
+
+```
+
+
+## MPI Results using `deaR` Package
+### Academic Year 2018-19 and 2020-21
+
+```{r, echo = FALSE, message = FALSE}
+
+library(deaR)
+library(dplyr)
+
+
+
+all_data1821 <- as.data.frame(schooldata[1:68, c(1,3,4,5,8,9)]) |>
+  mutate(Year = rep(c(1,2), each =34)) |>
+  select(Year, everything())
+  
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+
+all_data_malm1821 <- make_malmquist(all_data1821,
+                               percol = 1,
+                               arrangement = "vertical",
+                               dmus = 2,
+                               inputs = 3,
+                               outputs = 4:7)
+                            
+```
+
+```{r dear_1821, echo = FALSE, message = FALSE}
+
+result_gr1821 <- deaR::malmquist_index(all_data_malm1821,
+                                   orientation = "io",
+                                   rts = "vrs",
+                                   type1 = "cont",
+                                   type2 = "fgnz")
+
+res_mi_gr1821 <- t(rbind(result_gr1821$pech,
+                     result_gr1821$tc, result_gr1821$sech, result_gr1821$mi))
+
+colnames(res_mi_gr1821) <- c("PTEC", "TC", "SEC", "MPI")
+
+kbl (res_mi_gr1821, booktabs = T, digits = 3, align = 'c', longtable = T,
+     caption = "deaR Pacakge Results (IO-VRS): Academic Year 2018-19 and 2020-21") |>
+  kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
+```
+
+### Academic Year 2020-21 and 2021-22
+
+```{r, echo = FALSE, message = FALSE}
+
+
+all_data2022 <- as.data.frame(schooldata[35:102, c(1,3,4,5,8,9)]) |>
+  mutate(Year = rep(c(2,3), each =34)) |>
+  select(Year, everything())
+  
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+
+all_data_malm2022 <- make_malmquist(all_data2022,
+                               percol = 1,
+                               arrangement = "vertical",
+                               dmus = 2,
+                               inputs = 3,
+                               outputs = 4:7)
+                            
+```
+
+```{r dear_2022, echo = FALSE, message = FALSE}
+
+result_gr2022 <- deaR::malmquist_index(all_data_malm2022,
+                                   orientation = "io",
+                                   rts = "vrs",
+                                   type1 = "cont",
+                                   type2 = "fgnz")
+
+res_mi_gr2022 <- t(rbind(result_gr2022$pech,
+                     result_gr2022$tc, result_gr2022$sech, result_gr2022$mi))
+
+colnames(res_mi_gr2022) <- c("PTEC", "TC", "SEC", "MPI")
+
+kbl (res_mi_gr2022, booktabs = T, digits = 3, align = 'c', longtable = T,
+     caption = "deaR Pacakge Results (IO-VRS): Academic Year 2020-21 and 2021-22") |>
+  kable_styling(latex_options = c("HOLD_position", "striped", "repeat_header"))
+```
+
+## MPI Results using `MultiplierDEA` Package (IO-CRS) 
+
+### Academic Year 2018-19 and 2020-21 
+
+```{r appendix_data18_21, echo = FALSE}
+
+schooldata <- read_csv("D:/PSU/DEA/BSD DEA Project/ETM 506/MPI Project/Processed Data/MPI_BDS_data.csv", show_col_types=F)
+
+years <- c(rep("1819", 34), rep("2021", 34), rep("2122", 34))
+
+sdata <- as.data.frame(schooldata[,c(1,3,4,5,8,9)]) |>
+  mutate(A_Year = years) |>
+  mutate(School = substr(School, 1, nchar(School)-4))
+
+data18_21 <- sdata[1:68,]
+
+rownames(data18_21) <- NULL
+```
+
+```{r , echo = FALSE}
+
+
+append_mpi_es1 <- MultiplierDEA::MPI(Dataset = data18_21, DMU_colName = "School", 
+             IP_colNames = "Tot_Exp", 
+             OP_ColNames = c( "Dis_Stu", "Meal_Elig", "ELA_Prof", "Math_Prof"),
+             Period_ColName = "A_Year", Periods = c(1819, 2021),
+             rts = "crs", orientation = "input", scale = T) #Scale=TRUE if CRS
+
+```
+
+```{r appendix_result_18_21, echo = FALSE}
+append_res_es1 <- cbind(as.numeric(append_mpi_es1$et1t1.crs), #Efficiency for period 1 with reference technology from period 1
+                 as.numeric(append_mpi_es1$et1t2.crs), #Efficiency for period 2 with reference technology from period 1
+                 as.numeric(append_mpi_es1$et2t2.crs), #Efficiency for period 2 with reference technology from period 2
+                 as.numeric(append_mpi_es1$et2t1.crs), #Efficiency for period 1 with reference technology from period 2
+                 as.numeric(append_mpi_es1$tec),       #tec for CRS
+                 as.numeric(append_mpi_es1$tc),
+                 as.numeric(append_mpi_es1$m.crs))
+
+colnames(append_res_es1) <- c("E1819-T1819", "E2021-T1819", 
+                      "E2021-T2021", "E1819-T2021", "PTEC", "TC", "MPI")
+
+rownames(append_res_es1) <- append_mpi_es1$DMU
+
+kbl(append_res_es1, digits = 3,  booktabs=T, align ="ccccccc", longtable=T,
+    caption="MultiplierDEA Package Results (IO-CRS): Academic Year 2018-19 and 2020-21") |>
+  kable_styling(latex_options = c("HOLD_position", "repeat_header", "striped")) |>
+  footnote(general = c("1819 = Academic Year 2018-19 and 2021 = Academic Year 2020-21",
+                       "E1819-T1819 = Efficiency for academic year 2018-19 with reference technology from academic year 2018-19",
+                       "E2021-T1819 = Efficiency for academic year 2020-21 with reference technology from academic year 2018-19",
+                       "E2021-T2021 = Efficiency for academic year 2020-21 with reference technology from academic year 2020-21",
+                       "E1819-T2021 = Efficiency for academic year 2018-19 with reference technology from academic year 2020-21"))
+
+```
+
+### Academic Year 2020-21 and 2021-22 
+
+```{r appendix_data20_22, echo = FALSE}
+
+schooldata <- read_csv("D:/PSU/DEA/BSD DEA Project/ETM 506/MPI Project/Processed Data/MPI_BDS_data.csv", show_col_types=F)
+
+years <- c(rep("1819", 34), rep("2021", 34), rep("2122", 34))
+
+sdata <- as.data.frame(schooldata[,c(1,3,4,5,8,9)]) |>
+  mutate(A_Year = years) |>
+  mutate(School = substr(School, 1, nchar(School)-4))
+
+data20_22 <- sdata[35:102,]
+
+rownames(data20_22) <- NULL
+```
+
+```{r , echo = FALSE}
+
+
+append_mpi_es2 <- MultiplierDEA::MPI(Dataset = data20_22, DMU_colName = "School", 
+             IP_colNames = "Tot_Exp", 
+             OP_ColNames = c( "Dis_Stu", "Meal_Elig", "ELA_Prof", "Math_Prof"),
+             Period_ColName = "A_Year", Periods = c(2021, 2122),
+             rts = "crs", orientation = "input", scale = T) #Scale=TRUE if CRS
+
+```
+
+```{r appendix_result_20_22, echo = FALSE}
+append_res_es2 <- cbind(as.numeric(append_mpi_es2$et1t1.crs), #Efficiency for period 1 with reference technology from period 1
+                 as.numeric(append_mpi_es2$et1t2.crs), #Efficiency for period 2 with reference technology from period 1
+                 as.numeric(append_mpi_es2$et2t2.crs), #Efficiency for period 2 with reference technology from period 2
+                 as.numeric(append_mpi_es2$et2t1.crs), #Efficiency for period 1 with reference technology from period 2
+                 as.numeric(append_mpi_es2$tec),       #tec for CRS
+                 as.numeric(append_mpi_es2$tc),
+                 as.numeric(append_mpi_es2$m.crs))
+
+colnames(append_res_es2) <- c("E2021-T2021", "E2122-T2021", 
+                      "E2122-T2122", "E2021-T2122", "PTEC", "TC", "MPI")
+rownames(append_res_es2) <- append_mpi_es2$DMU
+
+kbl(append_res_es2, digits = 3,  booktabs=T, align ="ccccccc", longtable=T,
+    caption="MultiplierDEA Package Results (IO-CRS): Academic Year 2020-21 and 2021-22") |>
+  kable_styling(latex_options = c("HOLD_position", "repeat_header", "striped")) |>
+  footnote(general = c("2021 = Academic Year 2020-21 and 2122 = Academic Year 2021-22",
+                       "E2021-T2021 = Efficiency for academic year 2020-21 with reference technology from academic year 2020-21",
+                       "E2122-T2021 = Efficiency for academic year 2021-22 with reference technology from academic year 2020-21",
+                       "E2122-T2122 = Efficiency for academic year 2021-22 with reference technology from academic year 2021-22",
+                       "E2021-T2122 = Efficiency for academic year 2020-21 with reference technology from academic year 2021-22"))
+
+```

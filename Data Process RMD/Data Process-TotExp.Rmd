@@ -1,0 +1,426 @@
+---
+title: "Data Processing for Total Expenditure"
+author: "Kamal Thapa"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Note: Data Available from 2018-19 to 2021-22.
+
+# 2021-2022
+
+Load required packages for data processing.
+
+```{r load_library, echo=FALSE, warning = FALSE}
+
+library(readxl)  #package for excel
+library(readr)   #package for csv
+library(dplyr)   #package for data manipulation
+library(stringr) #package for string manipulation
+
+```
+
+Data Processing:
+
+```{r total_expense_data_2122, echo=FALSE}
+
+library(readxl)
+
+# URL of the Excel file
+url1 <- "https://www.oregon.gov/ode/schools-and-districts/grants/Documents/2021-22%20School%20Level%20Expenditure%20Report%20%E2%80%93%20Federal%20and%20State%20Special%20Revenue%20Breakout.xlsx"
+
+# Download the file to a temporary location 
+temp_file1 <- tempfile()
+download.file(url1, temp_file1, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name1 <- excel_sheets(temp_file1)[3]  # Get the name of the first sheet
+data1 <- read_xlsx(temp_file1, sheet = sheet_name1)
+
+# Remove the temporary file
+file.remove(temp_file1)
+
+```
+```{r delete_2122}
+
+print(data1)
+
+```
+
+
+```{r expense_process_2122, echo=FALSE}
+
+library(dplyr)
+
+select_data1 <- as.data.frame(data1) %>% #convert to dataframe
+  select("District", "School", "School Type","Total Expenditures") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on School Column
+
+select_data1 <- select_data1 |>
+  rename("TotExp"=`Total Expenditures`, "SchType"=`School Type`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", "International" )
+
+filtered_data1 <- select_data1 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+           grepl("Regular", `SchType`, ignore.case = TRUE) &  #use backtick (``) because of spaces in colnames
+           !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data1
+
+
+```
+
+
+```{r exp_differentiate_Raleighs_2122}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data1$School[filtered_data1$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data1$School[filtered_data1$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data1
+
+
+```
+
+
+
+```{r school_names_2122, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data1[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2122 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2122")
+
+# rename as dataframe
+schoolname2122 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2122) <- c("School")
+
+```
+
+```{r colbind_2122, echo=FALSE}
+
+data2122 <- cbind(schoolname2122,filtered_data1[4])
+data2122
+
+```
+
+# 2020-2021
+
+```{r total_expense_data_2021, echo=FALSE}
+
+library(readxl)
+
+# URL of the Excel file
+url2 <- "https://www.oregon.gov/ode/schools-and-districts/grants/Documents/2020-21%20School%20Level%20Expenditure%20Report%20with%20Federal%20and%20State-Local%20Breakout.xlsx"
+
+# Download the file to a temporary location 
+temp_file2 <- tempfile()
+download.file(url2, temp_file2, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name2 <- excel_sheets(temp_file2)[3]  # Get the name of the first sheet
+data2 <- read_xlsx(temp_file2, sheet = sheet_name2)
+
+# Remove the temporary file
+file.remove(temp_file2)
+
+```
+
+
+
+```{r delete_2021}
+
+print(data2)
+
+```
+
+
+
+```{r expense_process_2021, echo=FALSE}
+
+library(dplyr)
+
+select_data2 <- as.data.frame(data2) |> #convert to dataframe
+  select("District", "School", "School Type","Total Expenditures") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on School Column
+
+select_data2 <- select_data2 |>
+  rename("TotExp"=`Total Expenditures`, "SchType"=`School Type`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", "International" ) #same keyword
+
+filtered_data2 <- select_data2 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        grepl("Regular", `SchType`, ignore.case = TRUE) &  #use backtick (``) because of spaces in colnames
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data2
+
+
+```
+
+```{r exp_differentiate_Raleighs_2021}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data2$School[filtered_data2$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data2$School[filtered_data2$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data2
+
+
+```
+
+
+
+```{r school_names_2021, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data2[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+
+# Add the number 2021 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2021")
+
+# reaname as dataframe
+schoolname2021 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2021) <- c("School")
+
+```
+
+```{r colbind_2021, echo=FALSE}
+
+data2021 <- cbind(schoolname2021,filtered_data2[4])
+data2021
+
+```
+
+
+# 2019-2020
+
+```{r total_expense_data_1920, echo=FALSE}
+
+library(readxl)
+
+# URL of the Excel file
+url3 <- "https://www.oregon.gov/ode/schools-and-districts/grants/Documents/SchoolLevelExpenditures1920%20as%20of%207_14_2021%201726hrs.xlsm"
+
+# Download the file to a temporary location 
+temp_file3 <- tempfile()
+download.file(url3, temp_file3, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name3 <- excel_sheets(temp_file3)[2]  # Get the name of the first sheet
+data3 <- read_xlsx(temp_file3, sheet = sheet_name3)
+
+# Remove the temporary file
+file.remove(temp_file3)
+
+```
+
+
+
+```{r delete_1920}
+
+print(data3)
+
+```
+
+
+
+```{r expense_process_1920, echo=FALSE}
+
+library(dplyr)
+
+select_data3 <- as.data.frame(data3) |> #convert to dataframe
+  select("District", "School", "School Type","All Expenditures") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on School Column
+
+select_data3 <- select_data3 |>
+  rename("TotExp"=`All Expenditures`, "SchType"=`School Type`) #renames columns
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology" ) #same keyword
+
+filtered_data3 <- select_data3 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        grepl("Regular", `SchType`, ignore.case = TRUE) &  #use backtick (``) because of spaces in colnames
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data3
+
+
+```
+
+```{r exp_differentiate_Raleighs_1920}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data3$School[filtered_data3$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data3$School[filtered_data3$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data3
+
+
+```
+
+
+```{r school_names_1920, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data3[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 1920 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1920")
+
+# rename as dataframe
+schoolname1920 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1920) <- c("School")
+
+```
+
+```{r colbind_1920, echo=FALSE}
+
+data1920 <- cbind(schoolname1920,filtered_data3[4])
+data1920
+
+```
+
+
+# 2018-2019
+
+```{r total_expense_data_1819, echo=FALSE}
+
+library(readxl)
+
+# URL of the Excel file
+url4 <- "https://www.oregon.gov/ode/schools-and-districts/grants/Documents/SchoolLevelExpenditures1819%28V3%29%20as%20of%206_30_2020.xlsm"
+
+# Download the file to a temporary location 
+temp_file4 <- tempfile()
+download.file(url4, temp_file4, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name4 <- excel_sheets(temp_file4)[2]  # Get the name of the first sheet
+data4 <- read_xlsx(temp_file4, sheet = sheet_name4)
+
+# Remove the temporary file
+file.remove(temp_file4)
+
+```
+
+
+
+```{r delete_1819}
+
+print(data4)
+
+```
+
+
+
+```{r expense_process_1819, echo=FALSE}
+
+library(dplyr)
+
+select_data4 <- as.data.frame(data4) |> #convert to dataframe
+  select("District", "School", "School Type","All Expenditures") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on School Column
+
+select_data4 <- select_data4 |>
+  rename("TotExp"=`All Expenditures`, "SchType"=`School Type`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health" ) #same keyword
+
+filtered_data4 <- select_data4 |>
+  filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        grepl("Regular", `SchType`, ignore.case = TRUE) &  #use backtick (``) because of spaces in colnames
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+
+filtered_data4
+
+
+```
+
+```{r exp_differentiate_Raleighs_1819}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data4$School[filtered_data4$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data4$School[filtered_data4$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data4
+
+
+```
+
+
+```{r school_names_1819, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data4[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+
+# Add the number 1819 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1819")
+
+# rename as dataframe
+schoolname1819 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1819) <- c("School")
+
+```
+
+```{r colbind_1819, echo=FALSE}
+
+data1819 <- cbind(schoolname1819,filtered_data4[4])
+data1819
+
+```
+```{r totalexp_data_final, echo=FALSE}
+
+tot_exp_final <- rbind(data1819, data2021, data2122)
+
+# Save the data frame as a CSV file
+write.csv(tot_exp_final, "Processed Data/TotExpFinal.csv", row.names = FALSE)
+
+# Save the dataframe to an R data file 
+saveRDS(tot_exp_final, file = "Processed Data/TotExpFinal.rds")
+
+```
+
+
+
+
+

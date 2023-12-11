@@ -1,0 +1,579 @@
+---
+title: "Data Processing for Math Proficiency"
+author: "Kamal Thapa"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Note: Data Available for 2017-18, 2018-19, 2020-21, 2021-22, and 2022-23. No data for 2019-20.
+
+#2022-2023
+
+Load required packages for data processing.
+
+```{r load_library, echo=FALSE, warning = FALSE}
+
+library(readxl)  #package for excel
+library(readr)   #package for csv
+library(dplyr)   #package for data manipulation
+library(stringr) #package for string manipulation
+
+```
+
+```{r math_data_2223, echo=FALSE}
+
+library(readr)
+library(readxl)
+
+# URL of the Excel file
+url1 <- "https://www.oregon.gov/ode/educator-resources/assessment/Documents/TestResults2223/pagr_schools_math_all_2223.xlsx"
+
+# Download the file to a temporary location 
+temp_file1 <- tempfile()
+download.file(url1, temp_file1, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name1 <- excel_sheets(temp_file1)[1]  # Get the name of the first sheet
+math_data1 <- read_excel(temp_file1, sheet = sheet_name1)
+
+# Remove the temporary file
+file.remove(temp_file1)
+
+```
+
+
+```{r math_delete_2223, echo=FALSE}
+
+print(math_data1)
+
+```
+
+
+
+```{r math_proces_2223, echo=FALSE}
+
+library(dplyr)
+
+select_data1 <- as.data.frame(math_data1) |>
+  select("District", "School", "Student Group", "Number Proficient") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on column School 
+
+select_data1 <- select_data1 |>
+  rename("StuGrp" = `Student Group`, "Proficients" = `Number Proficient`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion","Community" ) #same keyword
+
+
+filtered_data1 <- select_data1 |>
+ filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        StuGrp=="Total Population (All Students)" &  #filters data for All Students
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+      
+filtered_data1
+
+```
+
+```{r math_differentiate_Raleighs_2223}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data1$School[filtered_data1$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data1$School[filtered_data1$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data1
+
+```
+
+
+
+```{r math_school_names_2223, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data1[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2223 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2223")
+
+# renames as dataframe
+schoolname2223 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2223) <- c("School")
+
+```
+
+
+```{r math_colbind_2223, echo=FALSE}
+
+math_data2223 <- cbind(schoolname2223,filtered_data1[4])
+math_data2223
+
+```
+
+
+
+#2021-2022
+
+
+```{r math_data_2122, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url2 <- "https://www.oregon.gov/ode/educator-resources/assessment/Documents/TestResults2122/pagr_schools_math_all_2122.xlsx"
+
+# Download the file to a temporary location 
+temp_file2 <- tempfile()
+download.file(url2, temp_file2, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name2 <- excel_sheets(temp_file2)[1]  # Get the name of the first sheet
+math_data2 <- read_xlsx(temp_file2, sheet = sheet_name2)
+
+# Remove the temporary file
+file.remove(temp_file2)
+
+```
+
+
+```{r math_delete_2122, echo=FALSE}
+
+print(math_data2)
+
+```
+
+
+
+```{r math_proces_2122, echo=FALSE}
+
+library(dplyr)
+
+select_data2 <- as.data.frame(math_data2) |>
+  select("District", "School", "Student Group", "Number Proficient") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on column School 
+
+select_data2 <- select_data2 |>
+  rename("StuGrp" = `Student Group`, "Proficients" = `Number Proficient`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion","Community" ) #same keyword
+
+
+filtered_data2 <- select_data2 |>
+ filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        StuGrp=="Total Population (All Students)" &  #filters data for All Students
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+      
+filtered_data2
+
+```
+
+```{r math_differentiate_Raleighs_2122}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data2$School[filtered_data2$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data2$School[filtered_data2$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data2
+
+```
+
+
+
+
+```{r school_names_2122, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data2[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2122 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2122")
+
+# renames as dataframe
+schoolname2122 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2122) <- c("School")
+
+```
+
+
+```{r math_colbind_2122, echo=FALSE}
+
+math_data2122 <- cbind(schoolname2122,filtered_data2[4])
+math_data2122
+
+```
+
+
+# 2020-2021
+
+
+```{r math_data_2021, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url3 <- "https://www.oregon.gov/ode/educator-resources/assessment/Documents/TestResults2021/pagr_schools_tot_raceethnicity_2021.xlsx"
+
+# Download the file to a temporary location 
+temp_file3 <- tempfile()
+download.file(url3, temp_file3, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name3 <- excel_sheets(temp_file3)[1]  # Get the name of the first sheet
+math_data3 <- read_xlsx(temp_file3, sheet = sheet_name3)
+
+# Remove the temporary file
+file.remove(temp_file3)
+
+```
+
+
+```{r math_delete_2021, echo=FALSE}
+
+print(math_data3)
+
+```
+
+
+
+```{r math_proces_2021, echo=FALSE}
+
+library(dplyr)
+
+select_data3 <- as.data.frame(math_data3) |>
+  select("District", "School", "Subject", "Student Group", "Number of Participants",
+         "Observed Proficiency") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on column School 
+
+select_data3 <- select_data3 |>
+  rename("StuGrp" = `Student Group`, "TotParts"=`Number of Participants`,"Proficients" = `Observed Proficiency`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion","Community" ) #same keyword
+
+
+filtered_data3 <- select_data3 |>
+ filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        StuGrp=="All students" &  Subject=="Mathematics" & #filters data for All Students and Mathematics
+          !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+      
+filtered_data3
+
+```
+```{r math_differentiate_Raleighs_2021}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data3$School[filtered_data3$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data3$School[filtered_data3$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data3 
+
+```
+
+```{r math_school_names_2021, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data3[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# Add the number 2021 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "2021")
+
+# renames as dataframe
+schoolname2021 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname2021) <- c("School")
+
+```
+
+
+```{r math_colbind_2021, echo=FALSE}
+
+math_data2021_temp1 <- cbind(schoolname2021, filtered_data3[5],filtered_data3[6])
+
+
+#Delete duplicate rows using distinct in dplyr
+math_data2021_temp2 <- math_data2021_temp1 |>
+  distinct()
+
+# Replace "*" with NA in the column 
+math_data2021_temp2$Proficients <- gsub("\\*", NA, math_data2021_temp2$Proficients)
+math_data2021_temp2$TotParts <- gsub("\\*", NA, math_data2021_temp2$TotParts)
+
+
+#Delete un-necessary rows
+math_data2021_temp3 <- math_data2021_temp2[-31,]
+
+math_data2021_temp4 <- math_data2021_temp3
+
+math_data2021_temp4
+
+```
+
+
+```{r math_per_to_numb2021, echo=FALSE}
+
+# First, convert the columns to numeric 
+math_data2021_temp4$TotParts <- as.numeric(math_data2021_temp4$TotParts)
+math_data2021_temp4$Proficients <- as.numeric(math_data2021_temp4$Proficients)
+
+# Multiply the two columns element-wise while handling NA
+math_data2021_temp4$Result <- ifelse(
+  is.na(math_data2021_temp4$TotParts) | is.na(math_data2021_temp4$Proficients),
+  NA,
+  round((math_data2021_temp4$TotParts * math_data2021_temp4$Proficients)/100)
+)
+
+math_data2021_temp4
+
+```
+
+```{r math_final_2021, echo=FALSE}
+
+math_data2021 <- as.data.frame(math_data2021_temp4[-c(2,3)])
+
+math_data2021 <- math_data2021 |>
+  rename("Proficients" = `Result`) 
+
+math_data2021
+
+```
+
+#2018-2019
+
+```{r math_data_1819, echo=FALSE}
+
+# URL of the Excel file
+url4 <- "https://www.oregon.gov/ode/educator-resources/assessment/Documents/TestResults2122/TestResults2019/pagr_schools_math_all_1819.xlsx"
+
+# Download the file to a temporary location 
+temp_file4 <- tempfile()
+download.file(url4, temp_file4, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name4 <- excel_sheets(temp_file4)[1]  # Get the name of the first sheet
+math_data4 <- read_xlsx(temp_file4, sheet = sheet_name4)
+
+# Remove the temporary file
+file.remove(temp_file4)
+
+```
+
+
+```{r math_delete_1819, echo=FALSE}
+
+print(math_data4)
+
+```
+
+
+
+```{r math_proces_1819, echo=FALSE}
+
+library(dplyr)
+
+select_data4 <- as.data.frame(math_data4) |>
+  select("District", "School", "Student Group", "Number Proficient") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on column School 
+
+select_data4 <- select_data4 |>
+  rename("StuGrp" = `Student Group`, "Proficients" = `Number Proficient`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion","Community" ) #same keyword
+
+filtered_data4 <- select_data4 |>
+ filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        StuGrp=="Total Population (All Students)" &  #filters All Students datga
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+      
+filtered_data4
+
+```
+
+```{r math_differentiate_Raleighs_1819}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data4$School[filtered_data4$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data4$School[filtered_data4$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data4
+
+```
+
+
+
+
+
+```{r math_school_names_1819, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data4[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# The new variable "FirstWord" will contain the first word of each school name
+
+# Add the number 1819 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1819")
+
+# renames as dataframe
+schoolname1819 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1819) <- c("School")
+
+```
+
+
+```{r math_colbind_1819, echo=FALSE}
+
+math_data1819 <- cbind(schoolname1819,filtered_data4[4])
+math_data1819
+
+```
+
+
+#2017-2018
+
+```{r math_data_1718, echo=FALSE}
+
+library(readr)
+
+# URL of the Excel file
+url5 <- "https://www.oregon.gov/ode/educator-resources/assessment/TestResults2018/pagr_schools_math_all_1718.xlsx"
+
+# Download the file to a temporary location 
+temp_file5 <- tempfile()
+download.file(url5, temp_file5, mode = "wb")
+
+# Read the first sheet of the Excel file from the temporary location
+sheet_name5 <- excel_sheets(temp_file5)[1]  # Get the name of the first sheet
+math_data5 <- read_xlsx(temp_file5, sheet = sheet_name5)
+
+# Remove the temporary file
+file.remove(temp_file5)
+
+```
+
+
+```{r math_delete_1718, echo=FALSE}
+
+print(math_data5)
+
+```
+
+
+
+```{r math_proces_1718, echo=FALSE}
+
+library(dplyr)
+
+select_data5 <- as.data.frame(math_data5) |>
+  select("District", "School", "Student Group", "Number Proficient") |>  #selects the columns
+  arrange(School) #arranges in alphabetical order based on column School 
+
+select_data5 <- select_data5 |>
+  rename("StuGrp" = `Student Group`, "Proficients" = `Number Proficient`) #renames column 
+
+keywords1 <- c("Middle", "High", "Kairos", "Charter", "Emerson", 
+               "Metropolitan", "Roseway","Village", "Academy", "Online", 
+               "International", "Technology", "Health","Immersion","Community" ) #same keyword
+
+
+filtered_data5 <- select_data5 |>
+ filter(grepl("Beaverton SD 48J", `District`, ignore.case = TRUE) &
+        StuGrp=="Total Population (All Students)" &  #filters All Students data
+        !grepl(paste(keywords1, collapse = "|"), `School`, ignore.case = TRUE)) #filters out the keywords
+      
+filtered_data5
+
+```
+
+```{r math_differentiate_Raleighs_1718}
+# change "Raleigh Hills" to "RaleighHills" and "Raleigh Park" to "RaleighPark" in the "School" column
+filtered_data5$School[filtered_data5$School == "Raleigh Hills Elementary School"] <- "RaleighHills Elementary School"
+filtered_data5$School[filtered_data5$School == "Raleigh Park Elementary School"]  <- "ReleighPark Elementary School"
+
+filtered_data5
+
+```
+
+
+
+
+```{r math_school_names_1718, echo=FALSE}
+
+library(dplyr)
+library(stringr)
+
+original_school_names <- filtered_data5[2]
+
+# Create a new variable with only the first word of each school name
+new_data <- original_school_names |>
+  mutate(FirstWord = word(School, 1, sep = " "))
+
+# The new variable "FirstWord" will contain the first word of each school name
+
+# Add the number 1718 to each "School"
+new_data$FirstWord <- paste0(new_data$FirstWord, "1718")
+
+# renames as dataframe
+schoolname1718 <- as.data.frame(new_data$FirstWord)
+
+colnames(schoolname1718) <- c("School")
+
+```
+
+
+```{r math_colbind_1718, echo=FALSE}
+
+math_data1718 <- cbind(schoolname1718,filtered_data5[4])
+math_data1718
+
+```
+
+```{r math_final_data, echo=FALSE}
+
+math_data_final <- rbind(math_data1819, math_data2021,
+                        math_data2122)
+
+# Save the data frame as a CSV file
+write.csv(math_data_final, "Processed Data/MathFinal.csv", row.names = FALSE)
+
+# Save the dataframe to an R data file 
+saveRDS(math_data_final, file = "Processed Data/MathFinal.rds")
+
+```
+
+
+
+
+
+
+
